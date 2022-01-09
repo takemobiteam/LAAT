@@ -42,28 +42,12 @@ class AttentionLayer(nn.Module):
         self.r = [args.r if args.r > 0 else n_labels[label_lvl] for label_lvl in range(n_level)]
 
         self.level_projection_size = level_projection_size
-
         self.linear = nn.Linear(self.size, self.size, bias=False)
-        if self.attention_mode == "hard":
-            self.first_linears = nn.ModuleList([nn.Linear(self.size, self.size, bias=True) for _ in range(self.n_level)])
-            self.second_linears = nn.ModuleList([nn.Linear(self.size, 1, bias=False) for _ in range(self.n_level)])
-
-        elif self.attention_mode == "self":
-
-            self.first_linears = nn.ModuleList([nn.Linear(self.size, self.d_a, bias=False) for _ in range(self.n_level)])
-            self.second_linears = nn.ModuleList([nn.Linear(self.d_a, self.r[label_lvl], bias=False) for label_lvl in range(self.n_level)])
-
-        elif self.attention_mode == "label" or self.attention_mode == "caml":
-            if self.attention_mode == "caml":
-                self.d_a = self.size
-
-            self.first_linears = nn.ModuleList([nn.Linear(self.size, self.d_a, bias=False) for _ in range(self.n_level)])
-            self.second_linears = nn.ModuleList([nn.Linear(self.d_a, self.n_labels[label_lvl], bias=False) for label_lvl in range(self.n_level)])
-            self.third_linears = nn.ModuleList([nn.Linear(self.size +
-                                               (self.level_projection_size if label_lvl > 0 else 0),
-                                               self.n_labels[label_lvl], bias=True) for label_lvl in range(self.n_level)])
-        else:
-            raise NotImplementedError
+        self.first_linears = nn.ModuleList([nn.Linear(self.size, self.d_a, bias=False) for _ in range(self.n_level)])
+        self.second_linears = nn.ModuleList([nn.Linear(self.d_a, self.n_labels[label_lvl], bias=False) for label_lvl in range(self.n_level)])
+        self.third_linears = nn.ModuleList([nn.Linear(self.size +
+                                           (self.level_projection_size if label_lvl > 0 else 0),
+                                           self.n_labels[label_lvl], bias=True) for label_lvl in range(self.n_level)])
         self._init_weights(mean=0.0, std=0.03)
 
     def _init_weights(self, mean=0.0, std=0.03) -> None:
@@ -82,9 +66,9 @@ class AttentionLayer(nn.Module):
             torch.nn.init.normal(linear.weight, mean, std)
             if linear.bias is not None:
                 linear.bias.data.fill_(0)
-        if self.attention_mode == "label" or self.attention_mode == "caml":
-            for linear in self.third_linears:
-                torch.nn.init.normal(linear.weight, mean, std)
+
+        for linear in self.third_linears:
+            torch.nn.init.normal(linear.weight, mean, std)
 
     def forward(self, x, previous_level_projection=None, label_level=0):
         """
@@ -96,33 +80,26 @@ class AttentionLayer(nn.Module):
             Weighted average output: [batch_size x dim (i.e., self.size)]
             Attention weights
         """
-        if self.attention_mode == "caml":
-            weights = F.tanh(x)
-        else:
-            weights = F.tanh(self.first_linears[label_level](x))
+        # weights = Z
+        weights = F.tanh(self.first_linears[label_level](x))
 
         att_weights = self.second_linears[label_level](weights)
+        # att_weights = A
         att_weights = F.softmax(att_weights, 1).transpose(1, 2)
         if len(att_weights.size()) != len(x.size()):
             att_weights = att_weights.squeeze()
+        # weighted_output = V
         weighted_output = att_weights @ x
 
-        if self.attention_mode == "label" or self.attention_mode == "caml":
-            batch_size = weighted_output.size(0)
+        batch_size = weighted_output.size(0)
 
-            if previous_level_projection is not None:
-                temp = [weighted_output,
-                        previous_level_projection.repeat(1, self.n_labels[label_level]).view(batch_size, self.n_labels[label_level], -1)]
-                weighted_output = torch.cat(temp, dim=2)
-
-            weighted_output = self.third_linears[label_level].weight.mul(weighted_output).sum(dim=2).add(
-                self.third_linears[label_level].bias)
-
-        else:
-            weighted_output = torch.sum(weighted_output, 1) / self.r[label_level]
-            if previous_level_projection is not None:
-                temp = [weighted_output, previous_level_projection]
-                weighted_output = torch.cat(temp, dim=1)
+        if previous_level_projection is not None:
+            temp = [weighted_output,
+                    previous_level_projection.repeat(1, self.n_labels[label_level]).view(batch_size, self.n_labels[label_level], -1)]
+            weighted_output = torch.cat(temp, dim=2)
+        # this should only be needed by the joint model
+        weighted_output = self.third_linears[label_level].weight.mul(weighted_output).sum(dim=2).add(
+            self.third_linears[label_level].bias)
 
         return weighted_output, att_weights
 
