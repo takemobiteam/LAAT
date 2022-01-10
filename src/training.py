@@ -73,6 +73,7 @@ def _load_and_cache_data(train_data, valid_data, test_data, vocab, args, logger,
     return train_dataset, valid_dataset, test_dataset
 
 
+
 def _train_model(train_data, valid_data, test_data,
                  vocab, args,
                  init_state_dict=None,
@@ -95,6 +96,8 @@ def _train_model(train_data, valid_data, test_data,
     """
     args.multilabel = bool(args.multilabel)
     model = args.model(vocab, args)
+
+
     if init_state_dict is not None:
         model.load_state_dict(init_state_dict)
     model.to(vocab.device)

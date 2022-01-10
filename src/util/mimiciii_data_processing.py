@@ -86,7 +86,7 @@ def process_df(df, writer, top_n_labels):
 
     unique_proc_full_labels = set()
 
-    for patient_id, row in df:
+    for patient_id, row in df.iterrows():
         count += 1
         if count % 100 == 0:
             print("{}/{}, {} - {} - {} diag labels ~ {} proc labels ~ {} all labels".
@@ -110,7 +110,7 @@ def process_df(df, writer, top_n_labels):
 
             unique_proc_full_labels.update(proc_labels[2].split("|"))
 
-            row = {"Patient_Id": patient_id, "Admission_Id": id, "Text": text,
+            row = {"Patient_Id": patient_id, "Admission_Id": patient_id, "Text": text,
                    "Full_Labels": labels[2],
                    "Chapter_Labels": labels[0],
                    "Three_Character_Labels": labels[1]
@@ -164,10 +164,12 @@ def process_codes(codes, is_diagnosis, top_n_labels):
     chapter_labels, three_character_labels, full_labels = [], [], []
     for c in codes:
         if c is not None:
+            c = str(c)
             if type(c) == float and np.isnan(c):
                 continue
             if top_n_labels is not None and reformat(c, is_diagnosis, FULL) not in top_n_labels:
                 continue
+
 
             chapter_label = reformat(c, is_diagnosis, CHAPTER)
             if chapter_label is not None:
@@ -333,15 +335,15 @@ def reformat(code, is_diag, level=FULL):
 
 if __name__ == "__main__":
     top_n_labels = read_admission_ids(
-        train_file="data/mimicdata/mimic3/train_full_hadm_ids.csv",
-        valid_file="data/mimicdata/mimic3/dev_full_hadm_ids.csv",
-        test_file="data/mimicdata/mimic3/test_full_hadm_ids.csv",
+        train_file="data/mimicdata/mimic3/train.csv",
+        valid_file="data/mimicdata/mimic3/dev.csv",
+        test_file="data/mimicdata/mimic3/test.csv",
         outdir="data/mimicdata/mimic3/full/")
 
     read_admission_ids(
-        train_file="data/mimicdata/mimic3/train_50_hadm_ids.csv",
-        valid_file="data/mimicdata/mimic3/dev_50_hadm_ids.csv",
-        test_file="data/mimicdata/mimic3/test_50_hadm_ids.csv",
+        train_file="data/mimicdata/mimic3/train.csv",
+        valid_file="data/mimicdata/mimic3/dev.csv",
+        test_file="data/mimicdata/mimic3/test.csv",
         outdir="data/mimicdata/mimic3/50/",
         top_n_labels=top_n_labels)
 
