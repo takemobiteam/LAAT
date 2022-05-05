@@ -20,7 +20,7 @@ n_not_found = 0
 
 
 label_count_dict = dict()
-n = 50
+n = 2
 
 
 def read_admission_ids(train_file, valid_file, test_file, outdir, top_n_labels=None):
