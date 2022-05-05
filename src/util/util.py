@@ -56,9 +56,8 @@ def calculate_scores(true_labels, pred_labels, pred_probs, average="macro", is_m
     p_8 = 0
     p_10 = 0
     p_15 = 0
-    print('>>>>> is_multilabel: ', is_multilabel)
-    print('>>>>> true_labels: ', true_labels)
-    print('>>>>> pred_labels: ', pred_labels)
+    import pandas as pd
+    pd.to_pickle([pred_probs, is_multilabel, average, true_labels, pred_labels], '/home/ubuntu/LAAT/result.p')
     if pred_probs is not None:
         if not is_multilabel:
             normalised_labels = normalise_labels(true_labels, len(pred_probs[0]))
