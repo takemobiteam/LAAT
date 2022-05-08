@@ -111,8 +111,8 @@ class RNN(nn.Module):
         weighted_outputs, attention_weights = perform_attention(self, rnn_output,
                                                                 self.get_last_hidden_output(hidden)
                                                                 )
-        print('<<<<<< weighted_outputs ', weighted_outputs.shape)
-        print('<<<<<< attention_weights ', attention_weights.shape)
+        print('<<<<<< weighted_outputs ', weighted_outputs[0].shape)
+        print('<<<<<< attention_weights ', attention_weights[0].shape)
         return weighted_outputs, attention_weights
 
     def get_last_hidden_output(self, hidden):
