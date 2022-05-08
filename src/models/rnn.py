@@ -92,7 +92,7 @@ class RNN(nn.Module):
 
         if self.use_dropout:
             embeds = self.dropout(embeds)
-
+        print('<<<<<< embeds ', embeds.shape)
         self.rnn.flatten_parameters()
         embeds = pack_padded_sequence(embeds, lengths, batch_first=True)
 
@@ -106,11 +106,12 @@ class RNN(nn.Module):
         # x * batch_size * (hidden_size * bidirection)
         rnn_output = rnn_output.permute(1, 0, 2)
         print('<<<<<< rnn_output 2 ', rnn_output.shape)
-        # 2 * x * 1024
+        # batch_size * x * 1024
 
         weighted_outputs, attention_weights = perform_attention(self, rnn_output,
                                                                 self.get_last_hidden_output(hidden)
                                                                 )
+        # batch_size * label, batch_size * label * length
         print('<<<<<< weighted_outputs ', weighted_outputs[0].shape)
         print('<<<<<< attention_weights ', attention_weights[0].shape)
         return weighted_outputs, attention_weights
