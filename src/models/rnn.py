@@ -103,7 +103,7 @@ class RNN(nn.Module):
         rnn_output = pad_packed_sequence(rnn_output)[0]
 
         rnn_output = rnn_output.permute(1, 0, 2)
-
+        print('<<<<<< rnn_output', rnn_output.shape)
         weighted_outputs, attention_weights = perform_attention(self, rnn_output,
                                                                 self.get_last_hidden_output(hidden)
                                                                 )
